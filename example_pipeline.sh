@@ -40,16 +40,20 @@ python /Users/thowhi/nlp-stuff/retrieve_training_vectors.py SwedishTranslations.
 
 
 # Train a translation matrix to convert Swedish->English, and one to convert English->Swedish:
-python /Users/thowhi/nlp-stuff/derive_translation_matrix.py --trainingRate 0.0005 --n-iter 10 --lang1-vectors-filename CommonEnglish_EnglishVectors.txt --lang2-vectors-filename CommonEnglish_SwedishVectors.txt --output-prefix English2Swedish_CommonEnglish
+python /Users/thowhi/nlp-stuff/derive_translation_matrix.py --trainingRate 0.0005 --n-iter 200 --lang1-vectors-filename CommonEnglish_EnglishVectors.txt --lang2-vectors-filename CommonEnglish_SwedishVectors.txt --output-prefix English2Swedish_CommonEnglish
 
-python /Users/thowhi/nlp-stuff/derive_translation_matrix.py 0.0001 10 CommonEnglish_EnglishVectors.txt CommonEnglish_SwedishVectors.txt English2Swedish_CommonEnglish
+python /Users/thowhi/nlp-stuff/derive_translation_matrix.py --trainingRate 0.0005 --n-iter 200 --lang1-vectors-filename CommonSwedish_EnglishVectors.txt --lang2-vectors-filename CommonSwedish_SwedishVectors.txt --output-prefix English2Swedish_CommonSwedish
 
-python /Users/thowhi/nlp-stuff/derive_translation_matrix.py 0.001 10 CommonEnglish_EnglishVectors.txt CommonEnglish_SwedishVectors.txt English2Swedish_CommonEnglish
+python /Users/thowhi/nlp-stuff/derive_translation_matrix.py --trainingRate 0.0005 --n-iter 200 --lang1-vectors-filename CommonEnglish_SwedishVectors.txt --lang2-vectors-filename CommonEnglish_EnglishVectors.txt --output-prefix Swedish2English_CommonEnglish
 
-python /Users/thowhi/nlp-stuff/derive_translation_matrix.py CommonSwedish_EnglishVectors.txt CommonSwedish_SwedishVectors.txt English2Swedish_CommonSwedish
+python /Users/thowhi/nlp-stuff/derive_translation_matrix.py --trainingRate 0.0005 --n-iter 200 --lang1-vectors-filename CommonSwedish_SwedishVectors.txt --lang2-vectors-filename CommonSwedish_EnglishVectors.txt --output-prefix Swedish2English_CommonSwedish
 
-python /Users/thowhi/nlp-stuff/derive_translation_matrix.py CommonEnglish_EnglishVectors.txt CommonEnglish_SwedishVectors.txt English2SwedishTranslationMatrix.txt
-python /Users/thowhi/nlp-stuff/derive_translation_matrix.py CommonEnglish_EnglishVectors.txt CommonEnglish_SwedishVectors.txt English2SwedishTranslationMatrix.txt
+# Translate the english words to the swedish space, and vice-versa:
+python /Users/thowhi/nlp-stuff/translate_vectors.py --source-lang-vectors matrix_swedish.txt --translation-matrix Swedish2English_CommonSwedish_TranslationMatrix_0.000500.txt --output-vectors-filename swedish2english_vectors.txt
+
+python /Users/thowhi/nlp-stuff/translate_vectors.py --source-lang-vectors matrix_english.txt --translation-matrix English2Swedish_CommonSwedish_TranslationMatrix_0.000500.txt --output-vectors-filename english2swedish_vectors.txt
+
+# XXX SEEMS TO BE WORKING: NEXT: Implement steps for calculating relative density statistics using the translated and original matrices, and also implement POS tagging. Then, implement final analysis + graph-generation steps.
 
 # Get the closest 100 words for each word:
 # XXX
