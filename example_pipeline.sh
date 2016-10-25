@@ -53,6 +53,17 @@ python /Users/thowhi/nlp-stuff/translate_vectors.py --source-lang-vectors matrix
 
 python /Users/thowhi/nlp-stuff/translate_vectors.py --source-lang-vectors matrix_english.txt --translation-matrix English2Swedish_CommonSwedish_TranslationMatrix_0.000500.txt --output-vectors-filename english2swedish_vectors.txt
 
+# Get the closest 100 words, for each word, for all four possible language comparisons:
+python /Users/thowhi/nlp-stuff/get_closest_words.py --lang1-vectors-file matrix_english.txt --lang2-vectors-file matrix_english.txt --output-file closest_words_english2english.txt
+python /Users/thowhi/nlp-stuff/get_closest_words.py --lang1-vectors-file matrix_swedish.txt --lang2-vectors-file matrix_swedish.txt --output-file closest_words_swedish2swedish.txt
+python /Users/thowhi/nlp-stuff/get_closest_words.py --lang1-vectors-file matrix_english.txt --lang2-vectors-file swedish2english_vectors.txt --output-file closest_words_swedish2english.txt
+python /Users/thowhi/nlp-stuff/get_closest_words.py --lang1-vectors-file matrix_swedish.txt --lang2-vectors-file english2swedish_vectors.txt --output-file closest_words_english2swedish.txt
+
+
+# Annotate the words with word density statistics, frequency information, and part-of-speech tagging:
+python /Users/thowhi/nlp-stuff/annotate_words.py --lang1-vectors-file matrix_english.txt --lang2-vectors-file swedish2english_vectors.txt
+
+
 # XXX SEEMS TO BE WORKING: NEXT: Implement steps for calculating relative density statistics using the translated and original matrices, and also implement POS tagging. Then, implement final analysis + graph-generation steps.
 
 # Get the closest 100 words for each word:
