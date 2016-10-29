@@ -76,6 +76,7 @@ python /Users/thowhi/nlp-stuff/calc_freqs.py matrix_swedish.txt ../nlp/wiki.sv.t
 # Annotate the words with part-of-speech tagging:
 cd /Volumes/TomsDisk/Projects/NLP/ReengineeringPipeline
 python /Users/thowhi/nlp-stuff/tag_pos.py --word-vectors-file matrix_english.txt --output english_pos.json
+python /Users/thowhi/nlp-stuff/tag_pos.py --word-vectors-file matrix_swedish.txt --output swedish_pos.json
 
 # XXX CONTINUE HERE: RE-RUN THESE COMMANDS, AND THEN SEE IF THE FINAL RESULTS ARE MORE SENSIBLE (I.E. INCLUDE PROPER WORDS AND EXCLUDE FAKE WORDS).
 
