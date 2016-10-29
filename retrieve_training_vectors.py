@@ -23,7 +23,7 @@ for word_pair in [line.strip().split() for line in open(word_pairs_file).readlin
         print >> sys.stderr, "FAILED:", lang1_word, lang2_word
         dummy = 1
     print >> output_matrix_lang1, " ".join(map(lambda item: str(item), vec1))
-    print >> output_matrix_lang2, " ".join(map(lambda item: str(item), vec1))
+    print >> output_matrix_lang2, " ".join(map(lambda item: str(item), vec2))
 
 output_matrix_lang1.close()
 output_matrix_lang2.close()

@@ -14,18 +14,18 @@ def get_closest_words(lang1_vectors_file = "lang1_vectors.txt", lang2_vectors_fi
     lang2_vectors = gensim.models.Word2Vec.load_word2vec_format(lang2_vectors_file, binary=False)
 
     lang1_words = lang1_vectors.vocab.keys()
+    lang1_words.sort()
 
     # Quick hacky approach for outputting json format without using a huge
     # amount of memory:
     first_line = True
     output_file = codecs.open(output_filename, 'w', encoding="utf_8")
     print >> output_file, "{"
-    for query_word in lang1_vectors.vocab.keys():
+    for query_word in lang1_words:
         vec = lang1_vectors[query_word]
-        word2sim = {word: sim for (word, sim) in lang2_vectors.similar_by_vector(vec, topn=num_closest)}
-        similarity_string = json.dumps(word2sim)
+        similarity_string = ", ".join(map(lambda tup: "\"%s\": %1.3f" % tup, lang2_vectors.similar_by_vector(vec, topn=num_closest)))
         if not first_line:
             print >> output_file, ","
-        print >> output_file, "\"" + query_word + "\": " + similarity_string
+        print >> output_file, "\"" + query_word + "\": {" + similarity_string + "}"
         first_line = False
     print >> output_file, "}"
