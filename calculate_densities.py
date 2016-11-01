@@ -53,7 +53,7 @@ def calculate_densities(lang1_closest_words_filename = "lang1_closest_words.json
             neighbour_comparison_dist_diff = calc_neighbour_comparison(word, word_dists_lang1, lang2_closest_word_dict,
                                                                        lambda d1, d2: d1-d2)
 
-            print >> output_file, word, median_dist_ratio, neighbour_comparison_dist_ratio, neighbour_comparison_dist_diff
+            print >> output_file, word, median_dist_ratio, neighbour_comparison_dist_ratio, neighbour_comparison_dist_diff, -neighbour_comparison_dist_diff
 
         curr_line_lang1 = lang1_closest_words_file.readline()
         curr_line_lang2 = lang2_closest_words_file.readline()

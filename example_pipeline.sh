@@ -75,18 +75,11 @@ python /Users/thowhi/nlp-stuff/calc_freqs.py matrix_swedish.txt ../nlp/wiki.sv.t
 
 # Annotate the words with part-of-speech tagging:
 cd /Volumes/TomsDisk/Projects/NLP/ReengineeringPipeline
-python /Users/thowhi/nlp-stuff/tag_pos.py --word-vectors-file matrix_english.txt --output english_pos.json
-python /Users/thowhi/nlp-stuff/tag_pos.py --word-vectors-file matrix_swedish.txt --output swedish_pos.json
+python /Users/thowhi/nlp-stuff/tag_pos.py --word-vectors-file matrix_english.txt --output english_pos.txt
+python /Users/thowhi/nlp-stuff/tag_pos.py --word-vectors-file matrix_swedish.txt --output swedish_pos.txt
 
-# XXX CONTINUE HERE: RE-RUN THESE COMMANDS, AND THEN SEE IF THE FINAL RESULTS ARE MORE SENSIBLE (I.E. INCLUDE PROPER WORDS AND EXCLUDE FAKE WORDS).
-
-
-# XXX SEEMS TO BE WORKING: NEXT: Implement steps for calculating relative density statistics using the translated and original matrices, and also implement POS tagging. Then, implement final analysis + graph-generation steps.
-
-# Get the closest 100 words for each word:
-# XXX
-
-# Calculate density statistics for each word:
-# XXX
+# Generate a csv file of annotated nodes and a csv file of weighted edges:
+python /Users/thowhi/nlp-stuff/collate_word_annotations.py --pos-tags english_pos.txt --nearby-words closest_words_english2english.json --word-freqs word_freqs_english.txt --word-densities word_densities_english.txt --output-nodes nodes_english.csv --output-edges edges_english.csv
+python /Users/thowhi/nlp-stuff/collate_word_annotations.py --pos-tags swedish_pos.txt --nearby-words closest_words_swedish2swedish.json --word-freqs word_freqs_swedish.txt --word-densities word_densities_swedish.txt --output-nodes nodes_swedish.csv --output-edges edges_swedish.csv
 
 # Rank words by the density metric, and then generate connected components using that restricted set of nodes:
