@@ -25,7 +25,7 @@ def generate_edges(nearby_words_file, output_edges_file, words_to_include, min_s
 
 
 @begin.start(auto_convert=True)
-def annotate_words(pos_tags="pos_tags.txt", nearby_words="closest_words.json", word_freqs="word_freqs.txt", word_densities="word_densities.txt", output_nodes="nodes.csv", output_edges="edges.csv", min_sim=0.5, max_neighbours=3, min_freq=3E-5):
+def annotate_words(pos_tags="pos_tags.txt", nearby_words="closest_words.json", word_freqs="word_freqs.txt", word_densities="word_densities.txt", output_nodes="nodes.csv", output_edges="edges.csv", min_sim=0.5, max_neighbours=3, min_freq=1E-5, density_num_top=1000):
     logging.basicConfig(stream=sys.stderr, level=logging.INFO)
 
     logging.info("Loading pos tags...")
@@ -36,6 +36,8 @@ def annotate_words(pos_tags="pos_tags.txt", nearby_words="closest_words.json", w
 
     logging.info("Loading word densities...")
     word_dens_table = pd.read_table(word_densities, sep=" ", index_col=0, header=None)
+    density_colnames = map(lambda val: "density_" + str(val), range(len(word_dens_table.columns)))
+    word_dens_table.columns = density_colnames
 
     logging.info("Generating nodes...")
 
@@ -45,9 +47,14 @@ def annotate_words(pos_tags="pos_tags.txt", nearby_words="closest_words.json", w
 
     nodes_table_filt = nodes_table.loc[nodes_table['freqs'] > min_freq,:]
 
-    nodes_table_filt.to_csv(output_nodes, encoding="utf-8", index=False)
+    # Filter the nodes to only retain the top nodes ranked by density:
+    # FIXME: Need more robust way to specify which density statistic to use:
+    #ntop = int(len(nodes_table_filt)*density_fraction_filter)
+    nodes_filt2 = nodes_table_filt.sort_values(density_colnames[0]).iloc[-density_num_top:-1,:]
 
-    words_to_include = map(lambda word: str(word).decode("utf8"), nodes_table_filt.ID.to_dict().keys())
+    nodes_filt2.to_csv(output_nodes, encoding="utf-8", index=False)
+
+    words_to_include = map(lambda word: str(word).decode("utf8"), nodes_filt2.ID.to_dict().keys())
 
     nodes_table_loaded = pd.read_table(output_nodes, encoding="utf-8", sep=",")
 
