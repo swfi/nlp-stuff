@@ -50,7 +50,10 @@ def annotate_words(pos_tags="pos_tags.txt", nearby_words="closest_words.json", w
     # Filter the nodes to only retain the top nodes ranked by density:
     # FIXME: Need more robust way to specify which density statistic to use:
     #ntop = int(len(nodes_table_filt)*density_fraction_filter)
-    nodes_filt2 = nodes_table_filt.sort_values(density_colnames[0]).iloc[-density_num_top:-1,:]
+    start_idx = -density_num_top
+    if density_num_top == -1:
+        start_idx = 0
+    nodes_filt2 = nodes_table_filt.sort_values(density_colnames[0]).iloc[start_idx:-1,:]
 
     nodes_filt2.to_csv(output_nodes, encoding="utf-8", index=False)
 

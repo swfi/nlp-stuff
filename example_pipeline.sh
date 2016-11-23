@@ -16,6 +16,9 @@ python process_wiki.py enwiki.xml.bz2 wiki.en.text
 python process_wiki.py svwiki.xml.bz2 wiki.sv.text
 
 # Train word2vec models:
+head -1000 ../nlp/wiki.en.text > tmp.txt
+python ~/nlp-stuff/train_word2vec.py tmp.txt wiki.en.text.model wiki.en.text.vector
+
 python train_word2vec_model.py wiki.en.text wiki.en.text.model wiki.en.text.vector
 python train_word2vec_model.py wiki.sv.text wiki.sv.text.model wiki.sv.text.vector
 
@@ -80,6 +83,13 @@ python /Users/thowhi/nlp-stuff/tag_pos.py --word-vectors-file matrix_swedish.txt
 
 # Generate a csv file of annotated nodes and a csv file of weighted edges:
 python /Users/thowhi/nlp-stuff/collate_word_annotations.py --pos-tags english_pos.txt --nearby-words closest_words_english2english.json --word-freqs word_freqs_english.txt --word-densities word_densities_english.txt --output-nodes nodes_english.csv --output-edges edges_english.csv
-python /Users/thowhi/nlp-stuff/collate_word_annotations.py --pos-tags swedish_pos.txt --nearby-words closest_words_swedish2swedish.json --word-freqs word_freqs_swedish.txt --word-densities word_densities_swedish.txt --output-nodes nodes_swedish.csv --output-edges edges_swedish.csv
+python /Users/thowhi/nlp-stuff/collate_word_annotations.py --pos-tags swedish_pos.txt --nearby-words closest_words_swedish2swedish.json --word-freqs word_freqs_swedish.txt --word-densities word_densities_swedish.txt --output-nodes nodes_swedish.csv --output-edges edges_swedish.csv --density-num-top 1000 --min-sim 0.7 --min-freq 0.0001
+
+python /Users/thowhi/nlp-stuff/collate_word_annotations.py --pos-tags english_pos.txt --nearby-words closest_words_english2english.json --word-freqs word_freqs_english.txt --word-densities word_densities_english.txt --output-nodes nodes_english_all.csv --output-edges edges_english_all.csv --density-num-top -1
+python /Users/thowhi/nlp-stuff/collate_word_annotations.py --pos-tags swedish_pos.txt --nearby-words closest_words_swedish2swedish.json --word-freqs word_freqs_swedish.txt --word-densities word_densities_swedish.txt --output-nodes nodes_swedish_all.csv --output-edges edges_swedish_all.csv --density-num-top -1 --min-sim 0.7 --min-freq 0.0001
+
+
+#57211
+# XXX continue here. Visualise the swedish and english networks in gephi. Check that the swedish one looks similar to before, and if so, see if the english one has a similar topology.
 
 # Rank words by the density metric, and then generate connected components using that restricted set of nodes:
