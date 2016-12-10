@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import codecs, collections, json, logging, pdb, sys
 import begin
+import networkx as nx
 import pandas as pd
 import numpy as np
 
@@ -42,17 +43,14 @@ def cmpClusts(clust1, clust2):
 def extract_clusters(nearby_words_file, words_to_retain, min_sim, closest_word_lang2):
     # Identify clusters, based on word proximity...
 
-    # Keep track of new clusters using an index:
-    clust_count = 0
-    word2clust = {}
-
-    clust_word_pairs = []
+    word_pair_2_sim = {}
     line_idx = 0
     for line in nearby_words_file.xreadlines():
         if line_idx % 1000 == 0:
-            logging.info("PROGRESS: Line: " + str(line_idx) + " ClusterCount: " + str(clust_count))
+            logging.info("PROGRESS: Line: " + str(line_idx))
         line_idx += 1
         # Extract all word pairings from this line:
+
         if len(line.strip().split()) > 1:
             # Obtain dictionary from current json line:
             line_dict = json.JSONDecoder(object_pairs_hook=collections.OrderedDict).decode("{" + line.strip() + "}")
@@ -68,55 +66,27 @@ def extract_clusters(nearby_words_file, words_to_retain, min_sim, closest_word_l
                                          tup[0] in words_to_retain,
                                          word_dists)
 
-                if len(close_word_dists) > 0:
-                    # Obtain the cluster index for these words:
-                    tmp_dists = filter(lambda tup: word2clust.has_key(tup[0]), close_word_dists)
-                    if len(tmp_dists) > 0:
-                        curr_clust_idx = word2clust[tmp_dists[0][0]]
-                    else:
-                        # New cluster:
-                        clust_word_pairs.append([])
-                        curr_clust_idx = clust_count
-                        clust_count += 1
+                # Add each of these words to the current cluster's list of word
+                # pairs:
+                for (word2, sim) in close_word_dists:
+                    word_pair_2_sim[(word1, word2)] = sim
 
-                    #if curr_clust_idx == 1177 or curr_clust_idx == 1187:
-                    #    pdb.set_trace()
-                    #    dummy = 1
-                    #if "aircraft_carriers" in map(lambda tup: tup[0], close_word_dists) + [word1]:
-                    #    print >> sys.stderr, curr_clust_idx
-                    #    pdb.set_trace()
-                    #    dummy = 1
+    # Extract connected components from the word pairings...
+    word_pair_graph = nx.Graph()
+    for (word1, word2) in word_pair_2_sim.keys():
+        word_pair_graph.add_edge(word1, word2)
 
-                    word2clust[word1] = curr_clust_idx
-                    curr_word_pairs = clust_word_pairs[curr_clust_idx]
-
-                    # Add each of these words to the current cluster's list of word
-                    # pairs:
-                    for (word2, sim) in close_word_dists:
-                        word2clust[word2] = curr_clust_idx
-                        curr_word_pairs.append((word1, word2, sim))
+    components = list(nx.connected_component_subgraphs(word_pair_graph))
 
     clusters = []
-    for clust_word_list in clust_word_pairs:
-        curr_cluster = SynonymCluster(clust_word_list)
-        curr_cluster.set_metrics(closest_word_lang2)
-        clusters.append(curr_cluster)
-
-    # Merge synonym clusters where necessary...
-    final_clusters = []
-    merged_clust_idxs = set()
-    for clust_idx1 in range(len(clusters)):
-        if not clust_idx1 in merged_clust_idxs:
-            starting_cluster = clusters[clust_idx1]
-            for clust_idx2 in range(clust_idx1+1, len(clusters)):
-                merge_candidate = clusters[clust_idx2]
-                if len(starting_cluster.get_words().intersect(merge_candidate.get_words())) > 0:
-                    # These clusters share words => merge in the second one, but only if it
-                    # has not already been previously merged:
-                    if not clust_idx2 in merged_clust_idxs:
-                        starting_cluster.merge(merge_candidate)
-                        merged_clust_idxs.add(clust_idx2)
-            final_clusters.append(starting_cluster)
+    for component in components:
+        word_sim_tups = []
+        for word_pair in component.edges():
+            if word_pair_2_sim.has_key(word_pair):
+                word_sim_tups.append((word_pair[0], word_pair[1], word_pair_2_sim[word_pair]))
+        syn_clust = SynonymCluster(word_sim_tups)
+        syn_clust.set_metrics(closest_word_lang2)
+        clusters.append(syn_clust)
 
     return clusters
 
