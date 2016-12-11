@@ -7,20 +7,36 @@ import numpy as np
 
 
 class SynonymCluster:
-    def __init__(self, word_pair_list):
+    def __init__(self, word_pair_list, clust_idx):
         self.word_pairs = word_pair_list
+        self.clust_idx = clust_idx
 
     def get_words(self):
         word1_list = map(lambda tup: tup[0], self.word_pairs)
         word2_list = map(lambda tup: tup[1], self.word_pairs)
         return set(word1_list + word2_list)
 
+    def get_tagged_word(self, word):
+        return "%s_%d" % (word, self.clust_idx)
+
     def get_uniq_translations(self):
         translation_list = map(lambda tup: tup[1], self.lang2_edges)
         return list(set(translation_list))
 
+    # FIXME: Hacky code, but should work:
+    def get_tagged_words(self):
+        return map(lambda word: self.get_tagged_word(word), self.get_words())
+
+    def get_tagged_translations(self):
+        return map(lambda word: self.get_tagged_word(word), self.get_uniq_translations())
+
     def set_metrics(self, closest_word_lang2):
-        self.lang2_edges = [tuple([word] + list(closest_word_lang2[word].items()[0])) for word in self.get_words()]
+        self.lang2_edges = []
+        for word1 in self.get_words():
+            translation_tup = closest_word_lang2[word1].items()[0]
+            word2 = translation_tup[0]
+            sim = translation_tup[1]
+            self.lang2_edges.append((word1, word2, sim))
         self.cosine_sims = map(lambda tup: tup[2], self.lang2_edges)
         self.median_sim = np.median(self.cosine_sims)
         self.max_sim = max(self.cosine_sims)
@@ -43,8 +59,9 @@ def cmpClusts(clust1, clust2):
 def extract_clusters(nearby_words_file, words_to_retain, min_sim, closest_word_lang2):
     # Identify clusters, based on word proximity...
 
-    word_pair_2_sim = {}
     line_idx = 0
+    clust_idx = 0
+    clusters = []
     for line in nearby_words_file.xreadlines():
         if line_idx % 1000 == 0:
             logging.info("PROGRESS: Line: " + str(line_idx))
@@ -66,27 +83,14 @@ def extract_clusters(nearby_words_file, words_to_retain, min_sim, closest_word_l
                                          tup[0] in words_to_retain,
                                          word_dists)
 
-                # Add each of these words to the current cluster's list of word
-                # pairs:
-                for (word2, sim) in close_word_dists:
-                    word_pair_2_sim[(word1, word2)] = sim
-
-    # Extract connected components from the word pairings...
-    word_pair_graph = nx.Graph()
-    for (word1, word2) in word_pair_2_sim.keys():
-        word_pair_graph.add_edge(word1, word2)
-
-    components = list(nx.connected_component_subgraphs(word_pair_graph))
-
-    clusters = []
-    for component in components:
-        word_sim_tups = []
-        for word_pair in component.edges():
-            if word_pair_2_sim.has_key(word_pair):
-                word_sim_tups.append((word_pair[0], word_pair[1], word_pair_2_sim[word_pair]))
-        syn_clust = SynonymCluster(word_sim_tups)
-        syn_clust.set_metrics(closest_word_lang2)
-        clusters.append(syn_clust)
+                # Create a new cluster directly from this these word similarities,
+                # but only if there was at least one close word observed:
+                if len(close_word_dists) > 0:
+                    word_sim_tups = map(lambda tup: (word1, tup[0], tup[1]), close_word_dists)
+                    syn_clust = SynonymCluster(word_sim_tups, clust_idx)
+                    syn_clust.set_metrics(closest_word_lang2)
+                    clust_idx += 1
+                    clusters.append(syn_clust)
 
     return clusters
 
@@ -102,19 +106,20 @@ def generate_graph(clusts, nodes_prefix, edges_prefix):
     edge_lines_to_print = set()
     clust_idx = 1
     for clust in clusts:
-        for word in clust.get_words():
+        for word in clust.get_tagged_words():
             curr_line = "%s,%s,%s,%1.3f,%1.3f,%1.3f" % (word, word, "Lang1", clust.median_sim, clust.max_sim, clust.max_minus_median)
             node_lines_to_print.add(curr_line)
-        for word in clust.get_uniq_translations():
-            curr_line = "%s_%d,%s_%d,%s,%1.3f,%1.3f,%1.3f" % (word, clust_idx, word, clust_idx, "Lang2", clust.median_sim, clust.max_sim, clust.max_minus_median)
+        for word in clust.get_tagged_translations():
+            curr_line = "%s,%s,%s,%1.3f,%1.3f,%1.3f" % (word, word, "Lang2", clust.median_sim, clust.max_sim, clust.max_minus_median)
             node_lines_to_print.add(curr_line)
         word_pairs = clust.word_pairs
         translation_pairs = clust.lang2_edges
         for word_pair in word_pairs:
+            #(clust.get_tagged_word(word_pair[0]), clust.get_tagged_word(word_pair[1]), word_pair[2], word_pair[2], "same")
             curr_line = "%s,%s,%s,%s,%s" % (word_pair[0], word_pair[1], word_pair[2], word_pair[2], "same")
             edge_lines_to_print.add(curr_line)
         for translation_pair in translation_pairs:
-            curr_line = "%s,%s_%d,%s,%s,%s" % (translation_pair[0], translation_pair[1], clust_idx, translation_pair[2], translation_pair[2], "different")
+            curr_line = "%s,%s,%s,%s,%s" % (clust.get_tagged_word(translation_pair[0]), clust.get_tagged_word(translation_pair[1]), translation_pair[2], translation_pair[2], "different")
             edge_lines_to_print.add(curr_line)
         clust_idx += 1
 
@@ -158,13 +163,16 @@ def annotate_words(pos_tags="", word_freqs="", nearby_words="closest_words.json"
     filt_clusts = filter(lambda cluster: len(cluster.get_words()) >= 5 and len(cluster.get_words()) <= 100, clusters)
     filt_clusts.sort(cmpClusts)
 
+    for clust in filt_clusts:
+        print clust.median_sim, clust.max_sim, clust.max_minus_median, " ".join(clust.get_words())
+
     #for clust in filt_clusts:
     #    print " ".join(map(lambda sim: str(sim), clust.cosine_sims))
     #clust.median_sim, clust.max_sim, clust.max_minus_median
 
     filt_clusts_only_big_max = filter(lambda cluster: cluster.max_sim >= 0.5, filt_clusts)
-    clusts_high_diff = filt_clusts[:30]#int(len(filt_clusts)/20.0)
-    clusts_low_diff = filt_clusts_only_big_max[-30:]#int(len(filt_clusts)/20.0)
+    clusts_high_diff = filt_clusts[:100]#int(len(filt_clusts)/20.0)
+    clusts_low_diff = filt_clusts_only_big_max[-100:]#int(len(filt_clusts)/20.0)
 
     generate_graph(filt_clusts, nodes_prefix + "_all", edges_prefix + "_all")
     generate_graph(clusts_high_diff, nodes_prefix + "_highDiff", edges_prefix + "_highDiff")
