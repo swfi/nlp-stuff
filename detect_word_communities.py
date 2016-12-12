@@ -237,7 +237,7 @@ def detect_word_communities(infomap_path = "/Users/thowhi/externalProgs/Infomap/
 
     out_f = open("word_communities.txt", 'w')
     for community in uniq_communities:
-        print >> out_f, community.median_sim, community.words
+        print >> out_f, community.median_sim, " ".join(community.words)
     out_f.close()
 
     word_to_comm_poor = filt_dict_on_vals(word_to_communities, poor_translation_communities)
