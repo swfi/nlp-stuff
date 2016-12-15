@@ -3,6 +3,7 @@ import codecs, collections, json, logging, pdb, os, sys
 import begin
 import pandas as pd
 import numpy as np
+from microsofttranslator import Translator
 
 
 class WordCommunity:
@@ -10,9 +11,14 @@ class WordCommunity:
         self.words = words
         self.community_ID = community_ID
         self.set_metrics(closest_word_lang2)
+        self.language = None
 
     def get_tagged_word(self, word):
         return "%s_%d" % (word, self.community_ID)
+
+    def determine_language(self, translator):
+        separate_words = reduce(lambda l1, l2: l1+l2, map(lambda tok: tok.split("_"), self.words))
+        self.language = translator.detect_language(" ".join(separate_words))
 
     def get_uniq_translations(self):
         translation_list = map(lambda tup: tup[1], self.lang2_edges)
@@ -205,7 +211,7 @@ def filt_dict_on_vals(in_dict, vals):
 
 
 @begin.start(auto_convert=True)
-def detect_word_communities(infomap_path = "/Users/thowhi/externalProgs/Infomap/Infomap", word_sims="closest_words.json", closest_word_other_lang_file = "closest_word_lang2.json", min_sim = 0.5, word_freqs="", min_word_freq=1E-4, min_word_pair_freq=1E-3, links_filename="links.txt", trees_dir="trees", nodes_prefix="nodes", edges_prefix="edges"):
+def detect_word_communities(infomap_path = "/Users/thowhi/externalProgs/Infomap/Infomap", word_sims="closest_words.json", closest_word_other_lang_file = "closest_word_lang2.json", min_sim = 0.5, word_freqs="", min_word_freq=1E-4, min_word_pair_freq=1E-3, links_filename="links.txt", trees_dir="trees", nodes_prefix="nodes", edges_prefix="edges", trans_app = "", trans_key = ""):
     logging.basicConfig(stream=sys.stderr, level=logging.INFO)
 
     logging.info("Loading word freqs...")
@@ -232,8 +238,17 @@ def detect_word_communities(infomap_path = "/Users/thowhi/externalProgs/Infomap/
     # translation score:
     uniq_communities.sort(cmpCommunities)
 
-    poor_translation_communities = uniq_communities[:50]
-    good_translation_communities = uniq_communities[-50:]
+    translator = Translator(trans_app, trans_key)
+
+    poor_translation_communities = uniq_communities[:100]
+    good_translation_communities = uniq_communities[-100:]
+    for comm in poor_translation_communities:
+        comm.determine_language(translator)
+    for comm in good_translation_communities:
+        comm.determine_language(translator)
+
+    poor_translation_communities = filter(lambda comm: comm.language == "en", poor_translation_communities)
+    good_translation_communities = filter(lambda comm: comm.language == "en", good_translation_communities)
 
     out_f = open("word_communities.txt", 'w')
     for community in uniq_communities:
