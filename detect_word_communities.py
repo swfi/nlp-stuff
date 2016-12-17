@@ -28,6 +28,16 @@ class WordCommunity:
     def get_tagged_words(self):
         return map(lambda word: self.get_tagged_word(word), self.words)
 
+    def get_tagged_translations_and_max_sims(self):
+        trans2dist = {}
+        for tup in self.lang2_edges:
+            tagged_word = self.get_tagged_word(tup[1])
+            if not trans2dist.has_key(tagged_word):
+                trans2dist[tagged_word] = tup[2]
+            elif tup[2] > trans2dist[tagged_word]:
+                trans2dist[tagged_word] = tup[2]
+        return trans2dist.items()
+
     def get_tagged_translations(self):
         return map(lambda word: self.get_tagged_word(word), self.get_uniq_translations())
 
@@ -170,15 +180,16 @@ def write_outputs(filtered_links, word_communities, nodes_prefix, edges_prefix, 
     logging.info("Outputting nodes and edges...")
     output_nodes_file = codecs.open(nodes_prefix + ".csv", 'w', encoding="utf_8")
     output_edges_file = codecs.open(edges_prefix + ".csv", 'w', encoding="utf_8")
-    print >> output_nodes_file, "ID,Label,Language,MedianSim,MaxSim,MaxMinusMedian"
+    print >> output_nodes_file, "ID,Label,Language,MaxLang1ClustSim,MedianSim,MaxSim,MaxMinusMedian"
     print >> output_edges_file, "Source,Target,Weight,Label,Language"
     node_lines_to_print = set()
     for curr_word_comm in word_communities:
         for word in curr_word_comm.words:
-            curr_line = "%s,%s,%s,%1.3f,%1.3f,%1.3f" % (word, word, "Lang1", curr_word_comm.median_sim, curr_word_comm.max_sim, curr_word_comm.max_minus_median)
+            curr_line = "%s,%s,%s,%1.3f,%1.3f,%1.3f,%1.3f" % (word, word, "Lang1", 1, curr_word_comm.median_sim, curr_word_comm.max_sim, curr_word_comm.max_minus_median)
             node_lines_to_print.add(curr_line)
-        for word in curr_word_comm.get_tagged_translations():
-            curr_line = "%s,%s,%s,%1.3f,%1.3f,%1.3f" % (word, word, "Lang2", curr_word_comm.median_sim, curr_word_comm.max_sim, curr_word_comm.max_minus_median)
+        # XXX CONTINUE HERE: DEBUG THE PROBLEM WITH PRINTING OF SWEDISH WORD NODES
+        for (word, max_sim) in curr_word_comm.get_tagged_translations_and_max_sims():
+            curr_line = "%s,%s,%s,%1.3f,%1.3f,%1.3f,%1.3f" % (word, word, "Lang2", max_sim, curr_word_comm.median_sim, curr_word_comm.max_sim, curr_word_comm.max_minus_median)
             node_lines_to_print.add(curr_line)
 
     for line in node_lines_to_print:
@@ -250,8 +261,18 @@ def detect_word_communities(infomap_path = "/Users/thowhi/externalProgs/Infomap/
     poor_translation_communities = filter(lambda comm: comm.language == "en", poor_translation_communities)
     good_translation_communities = filter(lambda comm: comm.language == "en", good_translation_communities)
 
-    out_f = open("word_communities.txt", 'w')
+    out_f = open("word_communities_all.txt", 'w')
     for community in uniq_communities:
+        print >> out_f, community.median_sim, " ".join(community.words)
+    out_f.close()
+
+    out_f = open("word_communities_poor_translations.txt", 'w')
+    for community in poor_translation_communities:
+        print >> out_f, community.median_sim, " ".join(community.words)
+    out_f.close()
+
+    out_f = open("word_communities_good_translations.txt", 'w')
+    for community in good_translation_communities:
         print >> out_f, community.median_sim, " ".join(community.words)
     out_f.close()
 
