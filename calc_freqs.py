@@ -56,8 +56,8 @@ def calc_freqs(matrix_file="matrix.txt", corpus_file="corpus.txt", output_file="
     out_file = codecs.open(output_file, 'w', encoding="utf_8")
     logging.info("Outputting word counts...")
     for word_tup in word_counts.keys():
-        print >> out_file, "_".join(word_tup), (float(word_counts[word_tup])*1000)/single_word_count
+        print >> out_file, "_".join(word_tup), len(word_tup), (float(word_counts[word_tup])*1000)/single_word_count
 
     logging.info("Outputting word pair counts...")
     for word_tup in word_pair_counts.keys():
-        print >> out_file, "_".join(word_tup), (float(word_pair_counts[word_tup])*1000)/paired_word_count
+        print >> out_file, "_".join(word_tup), len(word_tup), (float(word_pair_counts[word_tup])*1000)/paired_word_count

@@ -37,8 +37,8 @@ python /Users/thowhi/nlp-stuff/filter_word2vec_on_vocab.py swedishWords_saldo.tx
 python /Users/thowhi/nlp-stuff/filter_word2vec_on_vocab.py englishWords_twelveDicts.txt wiki.en.text.vector matrix_english.txt
 
 # Get the training-word translations:
-awk '$1 !~ /^[0-9]+$/ {print $1}' matrix_english.txt | head -6000 > MostCommonEnglishWords_6000.txt
-awk '$1 !~ /^[0-9]+$/ {print $1}' matrix_swedish.txt | head -6000 > MostCommonSwedishWords_6000.txt
+head -10000 matrix_english.txt | awk '$1 !~ /^[0-9]+$/ && $1 !~ /_/ {print $1}' | head -6000 > MostCommonEnglishWords_6000.txt
+head -10000 matrix_swedish.txt | awk '$1 !~ /^[0-9]+$/ && $1 !~ /_/ {print $1}' | head -6000 > MostCommonSwedishWords_6000.txt
 
 python /Users/thowhi/nlp-stuff/run_microsoft_translation.py MostCommonSwedishWords_6000.txt sv en EnglishTranslations.txt appName secret
 python /Users/thowhi/nlp-stuff/run_microsoft_translation.py MostEnglishSwedishWords_6000.txt en sv SwedishTranslations.txt appName secret
@@ -70,8 +70,8 @@ python /Users/thowhi/nlp-stuff/get_closest_words.py --lang1-vectors-file matrix_
 python /Users/thowhi/nlp-stuff/get_closest_words.py --lang1-vectors-file matrix_english.txt --lang2-vectors-file swedish2english_vectors.txt --output-file closest_word_swedish2english.json --num-closest 1
 python /Users/thowhi/nlp-stuff/get_closest_words.py --lang1-vectors-file matrix_swedish.txt --lang2-vectors-file english2swedish_vectors.txt --output-file closest_word_english2swedish.json --num-closest 1
 
-python /Users/thowhi/nlp-stuff/calculate_densities.py --lang1-closest-words-file closest_words_english2english.json --lang2-closest-words-file closest_words_swedish2english.json --lang2-closest-word-file closest_word_swedish2english.json --output-file word_densities_english.txt
-python /Users/thowhi/nlp-stuff/calculate_densities.py --lang1-closest-words-file closest_words_swedish2swedish.json --lang2-closest-words-file closest_words_english2swedish.json --lang2-closest-word-file closest_word_english2swedish.json --output-file word_densities_swedish.txt
+#python /Users/thowhi/nlp-stuff/calculate_densities.py --lang1-closest-words-file closest_words_english2english.json --lang2-closest-words-file closest_words_swedish2english.json --lang2-closest-word-file closest_word_swedish2english.json --output-file word_densities_english.txt
+#python /Users/thowhi/nlp-stuff/calculate_densities.py --lang1-closest-words-file closest_words_swedish2swedish.json --lang2-closest-words-file closest_words_english2swedish.json --lang2-closest-word-file closest_word_english2swedish.json --output-file word_densities_swedish.txt
 
 python /Users/thowhi/nlp-stuff/calc_freqs.py matrix_english.txt ../nlp/wiki.en.text word_freqs_english.txt
 python /Users/thowhi/nlp-stuff/calc_freqs.py matrix_swedish.txt ../nlp/wiki.sv.text word_freqs_swedish.txt
@@ -80,6 +80,11 @@ python /Users/thowhi/nlp-stuff/calc_freqs.py matrix_swedish.txt ../nlp/wiki.sv.t
 cd /Volumes/TomsDisk/Projects/NLP/ReengineeringPipeline
 python /Users/thowhi/nlp-stuff/tag_pos.py --word-vectors-file matrix_english.txt --output english_pos.txt
 python /Users/thowhi/nlp-stuff/tag_pos.py --word-vectors-file matrix_swedish.txt --output swedish_pos.txt
+
+# Run info map to perform community detection on words based on their similarity
+# scores. This will generate a filtered edge set, where an edge is only retained
+# if the two given words are part of the same community:
+python /Users/thowhi/nlp-stuff/detect_word_communities.py --word-sims closest_words_english2english.json --output-nodes nodes_english.csv --output-edges edges_english.csv
 
 # Generate a csv file of annotated nodes and a csv file of weighted edges:
 python /Users/thowhi/nlp-stuff/collate_word_annotations.py --pos-tags english_pos.txt --nearby-words closest_words_english2english.json --word-freqs word_freqs_english.txt --word-densities word_densities_english.txt --output-nodes nodes_english.csv --output-edges edges_english.csv

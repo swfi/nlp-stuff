@@ -222,7 +222,7 @@ def filt_dict_on_vals(in_dict, vals):
 
 
 @begin.start(auto_convert=True)
-def detect_word_communities(infomap_path = "/Users/thowhi/externalProgs/Infomap/Infomap", word_sims="closest_words.json", closest_word_other_lang_file = "closest_word_lang2.json", min_sim = 0.5, word_freqs="", min_word_freq=1E-4, min_word_pair_freq=1E-3, links_filename="links.txt", trees_dir="trees", nodes_prefix="nodes", edges_prefix="edges", trans_app = "", trans_key = ""):
+def detect_word_communities(infomap_path = "/Users/thowhi/externalProgs/Infomap/Infomap", word_sims="closest_words.json", closest_word_other_lang_file = "closest_word_lang2.json", min_sim = 0.5, word_freqs="", min_word_freq=1E-4, min_word_pair_freq=1E-3, links_filename="links.txt", trees_dir="trees", nodes_prefix="nodes", edges_prefix="edges", trans_app = "", trans_key = "", lang1_code="en"):
     logging.basicConfig(stream=sys.stderr, level=logging.INFO)
 
     logging.info("Loading word freqs...")
@@ -251,27 +251,29 @@ def detect_word_communities(infomap_path = "/Users/thowhi/externalProgs/Infomap/
 
     translator = Translator(trans_app, trans_key)
 
-    poor_translation_communities = uniq_communities[:100]
-    good_translation_communities = uniq_communities[-100:]
-    for comm in poor_translation_communities:
-        comm.determine_language(translator)
-    for comm in good_translation_communities:
-        comm.determine_language(translator)
+    n_top = int(len(uniq_communities)/10.0)
+    poor_translation_communities = uniq_communities[:n_top]
+    good_translation_communities = uniq_communities[-n_top:]
 
-    poor_translation_communities = filter(lambda comm: comm.language == "en", poor_translation_communities)
-    good_translation_communities = filter(lambda comm: comm.language == "en", good_translation_communities)
+#    for comm in poor_translation_communities:
+#        comm.determine_language(translator)
+#    for comm in good_translation_communities:
+#        comm.determine_language(translator)
 
-    out_f = open("word_communities_all.txt", 'w')
+#    poor_translation_communities = filter(lambda comm: comm.language == lang1_code, poor_translation_communities)
+#    good_translation_communities = filter(lambda comm: comm.language == lang1_code, good_translation_communities)
+
+    out_f = open("word_communities_all_" + lang1_code + ".txt", 'w')
     for community in uniq_communities:
         print >> out_f, community.median_sim, " ".join(community.words)
     out_f.close()
 
-    out_f = open("word_communities_poor_translations.txt", 'w')
+    out_f = open("word_communities_poor_translations_" + lang1_code + ".txt", 'w')
     for community in poor_translation_communities:
         print >> out_f, community.median_sim, " ".join(community.words)
     out_f.close()
 
-    out_f = open("word_communities_good_translations.txt", 'w')
+    out_f = open("word_communities_good_translations_" + lang1_code + ".txt", 'w')
     for community in good_translation_communities:
         print >> out_f, community.median_sim, " ".join(community.words)
     out_f.close()
@@ -285,6 +287,6 @@ def detect_word_communities(infomap_path = "/Users/thowhi/externalProgs/Infomap/
     filtered_links_poor = filter_links(links, id2word, word_to_comm_poor)
     filtered_links_good = filter_links(links, id2word, word_to_comm_good)
 
-    write_outputs(filtered_links_all, uniq_communities, nodes_prefix + "_all", edges_prefix + "_all", closest_word_lang2)
-    write_outputs(filtered_links_poor, poor_translation_communities, nodes_prefix + "_poor_translatability", edges_prefix + "_poor_translatability", closest_word_lang2)
-    write_outputs(filtered_links_good, good_translation_communities, nodes_prefix + "_good_translatability", edges_prefix + "_good_translatability", closest_word_lang2)
+    write_outputs(filtered_links_all, uniq_communities, nodes_prefix + "_" + lang1_code + "_all", edges_prefix + "_all", closest_word_lang2)
+    write_outputs(filtered_links_poor, poor_translation_communities, nodes_prefix + "_" + lang1_code + "_poor_translatability", edges_prefix + "_" + lang1_code + "_poor_translatability", closest_word_lang2)
+    write_outputs(filtered_links_good, good_translation_communities, nodes_prefix + "_" + lang1_code + "_good_translatability", edges_prefix + "_" + lang1_code + "_good_translatability", closest_word_lang2)

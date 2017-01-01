@@ -10,8 +10,10 @@ for line in matrix_file.xreadlines():
     if len(line) != 2:
         elems = line.strip().split()
         vec_length = len(elems) - 1
-        word = elems[0]
-        if word.decode("utf-8") in words:
+        matrix_words = elems[0].split("_")
+        include_line = reduce(lambda isWord1, isWord2: isWord1 and isWord2,
+                              map(lambda matrix_word: matrix_word.decode("utf-8") in words, matrix_words))
+        if include_line:
             n_included_words += 1
             print >> tmp_out_file, line.strip().decode("utf-8")
 
